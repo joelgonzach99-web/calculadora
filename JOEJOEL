@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuraHash — Mining ROI Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080808;
+  --bg2: #0d0d0d;
+  --bg3: #131313;
+  --bg4: #181818;
+  --border: #1e1e1e;
+  --border2: #2a2a2a;
+  --gold: #c9922a;
+  --gold2: #e8b84b;
+  --gold3: #f5d07a;
+  --gold-dim: rgba(201,146,42,0.10);
+  --gold-dim2: rgba(201,146,42,0.05);
+  --green: #3dba6f;
+  --green2: #52d987;
+  --green-dim: rgba(61,186,111,0.10);
+  --red: #e05555;
+  --blue: #4d9ee8;
+  --text: #d8d8d8;
+  --text2: #999;
+  --text3: #555;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:80px;}
+
+/* GRID */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(201,146,42,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(201,146,42,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+/* HEADER */
+.header{position:relative;z-index:1;padding:24px 40px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.logo-wrap{display:flex;align-items:center;gap:0;}
+.logo-img{width:120px;height:auto;object-fit:contain;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.btc-live-label{font-size:9px;letter-spacing:0.25em;color:var(--text3);text-transform:uppercase;}
+.btc-live-row{display:flex;align-items:center;gap:10px;}
+.btc-price{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold3);letter-spacing:0.04em;line-height:1;}
+.btc-pill{font-size:10px;padding:3px 9px;letter-spacing:0.08em;font-weight:600;}
+.pill-live{background:var(--green-dim);color:var(--green2);border:1px solid rgba(61,186,111,0.25);}
+.pill-up{background:var(--green-dim);color:var(--green2);border:1px solid rgba(61,186,111,0.25);}
+.pill-dn{background:rgba(224,85,85,0.10);color:var(--red);border:1px solid rgba(224,85,85,0.2);}
+.pill-manual{background:var(--gold-dim);color:var(--gold2);border:1px solid rgba(201,146,42,0.3);}
+.btc-updated{font-size:9px;color:var(--text3);letter-spacing:0.08em;}
+
+/* LAYOUT */
+.page{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:36px 24px;display:flex;flex-direction:column;gap:36px;}
+
+/* SECTION */
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.section-bar{width:3px;height:16px;background:var(--gold);flex-shrink:0;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.28em;color:var(--text2);text-transform:uppercase;}
+.section-note{font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-left:auto;}
+
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);padding:28px;}
+.panel-sm{background:var(--bg3);border:1px solid var(--border);padding:20px 24px;}
+
+/* CONTROLS */
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;}
+.ctrl{display:flex;flex-direction:column;gap:8px;}
+.ctrl-label{font-size:9px;letter-spacing:0.22em;color:var(--text3);text-transform:uppercase;}
+.ctrl-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold3);letter-spacing:0.04em;line-height:1.1;}
+.ctrl-sub{font-size:9px;color:var(--text3);}
+input[type=range]{width:100%;-webkit-appearance:none;height:2px;background:var(--border2);outline:none;cursor:pointer;margin-top:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--gold);cursor:pointer;}
+input[type=number]{width:100%;background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;outline:none;-moz-appearance:textfield;}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+input[type=number]:focus{border-color:var(--gold);}
+.manual-row{display:flex;gap:8px;align-items:center;margin-top:4px;}
+.toggle{padding:7px 14px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;cursor:pointer;transition:all 0.15s;}
+.toggle.on{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
+.kpi{background:var(--bg2);padding:20px 18px;display:flex;flex-direction:column;gap:5px;}
+.kpi-label{font-size:8px;letter-spacing:0.22em;color:var(--text3);text-transform:uppercase;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;line-height:1;}
+.kpi-sub{font-size:9px;color:var(--text3);}
+.c-gold{color:var(--gold3);}
+.c-green{color:var(--green2);}
+.c-red{color:var(--red);}
+.c-white{color:#fff;}
+
+/* COST BAR */
+.bar-section{background:var(--bg3);border:1px solid var(--border);border-top:none;padding:16px 18px;}
+.bar-legend{display:flex;gap:20px;margin-bottom:8px;}
+.bar-dot{width:8px;height:8px;flex-shrink:0;margin-top:3px;}
+.bar-legend-item{display:flex;align-items:flex-start;gap:6px;font-size:9px;color:var(--text3);letter-spacing:0.08em;}
+.bar-legend-val{color:var(--text2);font-family:'DM Mono',monospace;font-size:9px;}
+.bar-track{height:8px;background:var(--bg4);border:1px solid var(--border2);position:relative;overflow:hidden;}
+.bar-energy{position:absolute;left:0;top:0;bottom:0;background:var(--red);opacity:0.7;transition:width 0.4s;}
+.bar-hosting{position:absolute;top:0;bottom:0;background:var(--gold);opacity:0.5;transition:all 0.4s;}
+.bar-net{position:absolute;top:0;bottom:0;background:var(--green);opacity:0.75;transition:all 0.4s;}
+
+/* SCENARIOS */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 16px;text-align:left;font-size:8px;letter-spacing:0.2em;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400;white-space:nowrap;}
+td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:12px;font-family:'DM Mono',monospace;white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr.cur-row td{background:var(--gold-dim2);}
+tr.cur-row td:first-child{border-left:2px solid var(--gold);}
+.td-gold{color:var(--gold2);}
+.td-green{color:var(--green2);}
+.td-red{color:var(--red);}
+.td-muted{color:var(--text3);}
+.td-white{color:#fff;}
+.tag-now{font-size:8px;letter-spacing:0.1em;background:var(--gold-dim);color:var(--gold2);border:1px solid rgba(201,146,42,0.3);padding:2px 6px;margin-left:8px;vertical-align:middle;}
+
+/* STRATEGY SECTION */
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:720px){.strategy-grid{grid-template-columns:1fr;}}
+.strat{border:1px solid var(--border);position:relative;overflow:hidden;}
+.strat-top{height:3px;width:100%;}
+.strat-sell .strat-top{background:linear-gradient(90deg,var(--green),transparent);}
+.strat-hodl .strat-top{background:linear-gradient(90deg,var(--gold),transparent);}
+.strat-body{padding:24px;}
+.strat-tag{display:inline-block;font-size:8px;letter-spacing:0.25em;padding:3px 10px;margin-bottom:14px;text-transform:uppercase;}
+.strat-sell .strat-tag{background:var(--green-dim);color:var(--green2);border:1px solid rgba(61,186,111,0.2);}
+.strat-hodl .strat-tag{background:var(--gold-dim);color:var(--gold2);border:1px solid rgba(201,146,42,0.25);}
+.strat-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.08em;margin-bottom:6px;}
+.strat-sell .strat-title{color:#fff;}
+.strat-hodl .strat-title{color:var(--gold3);}
+.strat-desc{font-size:11px;color:var(--text3);line-height:1.75;margin-bottom:20px;}
+.strat-metrics{display:flex;flex-direction:column;gap:8px;}
+.sm{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--bg3);border:1px solid var(--border2);}
+.sm-label{font-size:8px;letter-spacing:0.18em;color:var(--text3);text-transform:uppercase;}
+.sm-val{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.04em;}
+.sm-note{font-size:8px;color:var(--text3);margin-top:2px;}
+
+/* HODL CONTROLS */
+.hodl-ctrl{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+@media(max-width:600px){.hodl-ctrl{grid-template-columns:1fr;}}
+
+/* COMPARISON TABLE */
+.compare-panel{margin-top:20px;border:1px solid var(--border);overflow:hidden;}
+.compare-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.compare-title{font-size:9px;letter-spacing:0.22em;color:var(--text3);text-transform:uppercase;}
+.compare-note{font-size:9px;color:var(--text3);}
+
+/* PAYBACK */
+.pb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
+.pb{background:var(--bg2);padding:22px 20px;display:flex;flex-direction:column;gap:4px;}
+.pb-label{font-size:8px;letter-spacing:0.2em;color:var(--text3);text-transform:uppercase;margin-bottom:4px;}
+.pb-months{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold3);line-height:1;}
+.pb-years{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;}
+.pb-bar{height:3px;background:var(--border2);margin-top:10px;overflow:hidden;}
+.pb-bar-fill{height:100%;background:var(--gold);transition:width 0.4s;}
+.pb.pb-current{background:var(--gold-dim2);border-left:2px solid var(--gold);}
+
+/* INSIGHT BOX */
+.insight{background:var(--bg3);border:1px solid var(--border2);border-left:3px solid var(--gold);padding:16px 20px;margin-top:16px;}
+.insight-label{font-size:8px;letter-spacing:0.22em;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+.insight-text{font-size:11px;color:var(--text2);line-height:1.7;}
+
+/* FOOTER */
+.footer{font-size:9px;color:var(--text3);letter-spacing:0.08em;text-align:center;padding-top:20px;border-top:1px solid var(--border);line-height:2;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <img class="logo-img" id="logoImg" src="" alt="NeuraHash">
+  </div>
+  <div class="header-right">
+    <div class="btc-live-label">Bitcoin / USD — Live Price</div>
+    <div class="btc-live-row">
+      <div class="btc-price" id="btcDisplay">$—</div>
+      <div class="btc-pill pill-live" id="btcPill">LIVE</div>
+    </div>
+    <div class="btc-updated" id="btcUpdated">Connecting...</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ① CONTROLS -->
+  <div>
+    <div class="section-head">
+      <div class="section-bar"></div>
+      <div class="section-title">Investment Parameters</div>
+    </div>
+    <div class="panel">
+      <div class="ctrl-grid">
+        <div class="ctrl">
+          <div class="ctrl-label">Number of Machines</div>
+          <div class="ctrl-val" id="mVal">10</div>
+          <div class="ctrl-sub">Antminer 395 TH/s · $5,098/unit</div>
+          <input type="range" id="mSlider" min="1" max="200" value="10" oninput="calc()">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-label">Total Investment</div>
+          <div class="ctrl-val c-gold" id="invVal">$50,980</div>
+          <div class="ctrl-sub" id="invSub">10 machines × $5,098</div>
+          <input type="number" id="machinePrice" value="5098" placeholder="Price per machine" oninput="calc()" style="margin-top:8px;">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-label">Hosting Fee</div>
+          <div class="ctrl-val" id="hostVal">15%</div>
+          <div class="ctrl-sub">% of gross BTC revenue</div>
+          <input type="range" id="hostSlider" min="0" max="30" value="15" oninput="calc()">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-label">BTC Price (drag or type)</div>
+          <div class="ctrl-val c-gold" id="btcSliderVal">$77,500</div>
+          <div class="ctrl-sub" id="manSub">Drag to simulate · auto-updates live</div>
+          <input type="range" id="btcSlider" min="50000" max="500000" value="77500" step="500" oninput="onBtcSlider()">
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+            <input type="number" id="manInput" value="77500" oninput="onManual()" style="flex:1;">
+            <button class="toggle" id="manBtn" onclick="toggleLive()" style="white-space:nowrap;font-size:9px;padding:10px 10px;">LIVE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② MONTHLY OUTPUT -->
+  <div>
+    <div class="section-head">
+      <div class="section-bar"></div>
+      <div class="section-title">Monthly Production</div>
+      <div class="section-note">395 TH/s · 0.0001885 BTC/day/machine (F2Pool FPPS)</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">BTC Mined / Month</div>
+        <div class="kpi-val c-gold" id="kBtc">—</div>
+        <div class="kpi-sub" id="kBtcSub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Gross Revenue</div>
+        <div class="kpi-val c-gold" id="kGross">—</div>
+        <div class="kpi-sub">before any deductions</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Energy Cost</div>
+        <div class="kpi-val c-red" id="kEnergy">—</div>
+        <div class="kpi-sub" id="kEnergySub">$163 fixed / machine</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Hosting Fee</div>
+        <div class="kpi-val c-red" id="kHost">—</div>
+        <div class="kpi-sub" id="kHostSub">% of gross revenue</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Net Income</div>
+        <div class="kpi-val" id="kNet">—</div>
+        <div class="kpi-sub">what you actually receive</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Monthly ROI</div>
+        <div class="kpi-val" id="kRoi">—</div>
+        <div class="kpi-sub">net / total investment</div>
+      </div>
+    </div>
+    <div class="bar-section">
+      <div class="bar-legend">
+        <div class="bar-legend-item"><div class="bar-dot" style="background:var(--red);opacity:0.7;"></div><div><div>Energy</div><div class="bar-legend-val" id="blEnergy">—</div></div></div>
+        <div class="bar-legend-item"><div class="bar-dot" style="background:var(--gold);opacity:0.5;"></div><div><div>Hosting</div><div class="bar-legend-val" id="blHost">—</div></div></div>
+        <div class="bar-legend-item"><div class="bar-dot" style="background:var(--green);opacity:0.75;"></div><div><div>Net to Investor</div><div class="bar-legend-val" id="blNet">—</div></div></div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-energy" id="bEnergy"></div>
+        <div class="bar-hosting" id="bHosting"></div>
+        <div class="bar-net" id="bNet"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ SCENARIOS -->
+  <div>
+    <div class="section-head">
+      <div class="section-bar"></div>
+      <div class="section-title">Bitcoin Price Scenarios</div>
+      <div class="section-note">Net income changes with BTC price · energy is fixed</div>
+    </div>
+    <div class="panel" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>BTC Price</th>
+              <th>Gross / Month</th>
+              <th>Energy (fixed)</th>
+              <th>Hosting Fee</th>
+              <th>Net / Month</th>
+              <th>Net / Year</th>
+              <th>Monthly ROI</th>
+              <th>Payback</th>
+            </tr>
+          </thead>
+          <tbody id="scenBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="insight" id="scenInsight">
+      <div class="insight-label">💡 Key Insight</div>
+      <div class="insight-text" id="scenInsightText">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ④ HOLD VS SELL -->
+  <div>
+    <div class="section-head">
+      <div class="section-bar"></div>
+      <div class="section-title">Strategy: Sell Monthly vs Hold BTC</div>
+      <div class="section-note">Compare both strategies with the same machine setup</div>
+    </div>
+    <div class="panel hodl-ctrl">
+      <div class="ctrl">
+        <div class="ctrl-label">Accumulation Period</div>
+        <div class="ctrl-val" id="hdMonthsVal">12 months</div>
+        <div class="ctrl-sub" id="hdBtcAccum">—</div>
+        <input type="range" id="hdMonths" min="1" max="60" value="12" oninput="calc()">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Target BTC Price to Sell (HODL scenario)</div>
+        <div class="ctrl-val c-gold" id="hdSellVal">$150,000</div>
+        <input type="number" id="hdSellPrice" value="150000" oninput="calc()" style="margin-top:8px;">
+        <div class="ctrl-sub">projected price when you sell your BTC</div>
+      </div>
+    </div>
+    <div class="strategy-grid">
+      <div class="strat strat-sell">
+        <div class="strat-top"></div>
+        <div class="strat-body">
+          <div class="strat-tag">Option A — Sell Every Month</div>
+          <div class="strat-title">Steady Cash Flow</div>
+          <div class="strat-desc">Every month you convert your mined BTC to USD at the current price. You receive a predictable monthly income, no market exposure. Best for reinvesting or covering expenses.</div>
+          <div class="strat-metrics">
+            <div class="sm"><div><div class="sm-label">Total USD Received</div><div class="sm-note" id="ssTotalNote">—</div></div><div class="sm-val c-green" id="ssTotalUsd">—</div></div>
+            <div class="sm"><div><div class="sm-label">Net Per Month (avg)</div></div><div class="sm-val" id="ssPerMonth">—</div></div>
+            <div class="sm"><div><div class="sm-label">BTC Price Exposure</div></div><div class="sm-val" style="font-size:13px;color:var(--green2);">NONE — sold at spot</div></div>
+            <div class="sm"><div><div class="sm-label">Risk Level</div></div><div class="sm-val" style="font-size:16px;color:var(--green2);">LOW</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="strat strat-hodl">
+        <div class="strat-top"></div>
+        <div class="strat-body">
+          <div class="strat-tag">Option B — Hold BTC</div>
+          <div class="strat-title">Accumulate & Multiply</div>
+          <div class="strat-desc">You keep all mined BTC and sell only when you hit your target price. If BTC appreciates, every satoshi you held becomes worth more. Higher risk, much higher upside.</div>
+          <div class="strat-metrics">
+            <div class="sm"><div><div class="sm-label">BTC Accumulated (gross)</div><div class="sm-note" id="shBtcNote">—</div></div><div class="sm-val c-gold" id="shBtc">—</div></div>
+            <div class="sm"><div><div class="sm-label">Value at Target Price</div><div class="sm-note" id="shTargetNote">—</div></div><div class="sm-val c-green" id="shValue">—</div></div>
+            <div class="sm"><div><div class="sm-label">Extra vs Selling Monthly</div></div><div class="sm-val c-gold" id="shExtra">—</div></div>
+            <div class="sm"><div><div class="sm-label">Risk Level</div></div><div class="sm-val" style="font-size:16px;color:var(--gold2);">MEDIUM–HIGH</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="compare-panel">
+      <div class="compare-header">
+        <div class="compare-title">HODL Value at Different BTC Prices</div>
+        <div class="compare-note" id="cmpNote">—</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>If BTC reaches</th>
+              <th>BTC you hold</th>
+              <th>Total USD value</th>
+              <th>vs Selling monthly</th>
+              <th>Return on investment</th>
+              <th>Gain multiplier</th>
+            </tr>
+          </thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">💡 Strategy Insight</div>
+      <div class="insight-text" id="stratInsight">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ⑤ PAYBACK -->
+  <div>
+    <div class="section-head">
+      <div class="section-bar"></div>
+      <div class="section-title">Payback Period</div>
+      <div class="section-note">How many months to recover your full investment</div>
+    </div>
+    <div class="pb-grid" id="pbGrid"></div>
+    <div class="insight">
+      <div class="insight-label">💡 Payback Insight</div>
+      <div class="insight-text" id="pbInsight">Loading...</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    NeuraHash · F2Pool FPPS verified data · 395 TH/s = 0.0001885645 BTC/day/machine · Energy $163/machine/month fixed · BTC price via CoinGecko API<br>
+    This calculator is for informational purposes only. Mining difficulty and BTC price fluctuate. Past performance does not guarantee future results.
+  </div>
+
+</div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────
+const BTC_DAY = 0.0001885645;
+const DAYS_MO = 30.44;
+const BTC_MO = BTC_DAY * DAYS_MO; // ~0.005742 per machine per month
+const EN_MO = 163; // USD per machine per month
+
+// ── STATE ─────────────────────────────────────────────────────
+let btcPrice = 77500;
+let manualMode = false;
+
+// ── HELPERS ───────────────────────────────────────────────────
+const usd = (n,d=0)=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct = n=>n.toFixed(2)+'%';
+const btcFmt = n=>n.toFixed(4)+' BTC';
+
+// ── MAIN CALC ─────────────────────────────────────────────────
+function calc(){
+  const m   = +document.getElementById('mSlider').value;
+  const hp  = +document.getElementById('hostSlider').value/100;
+  const mp  = +document.getElementById('machinePrice').value||5098;
+  const hmo = +document.getElementById('hdMonths').value;
+  const hsp = +document.getElementById('hdSellPrice').value||150000;
+
+  // UI updates
+  document.getElementById('mVal').textContent = m;
+  document.getElementById('hostVal').textContent = (+document.getElementById('hostSlider').value)+'%';
+  document.getElementById('hdMonthsVal').textContent = hmo+' month'+(hmo===1?'':'s');
+  document.getElementById('hdSellVal').textContent = usd(hsp);
+
+  const totalInv = mp * m;
+  document.getElementById('invVal').textContent = usd(totalInv);
+  document.getElementById('invSub').textContent = m+' machines × '+usd(mp);
+
+  // Monthly
+  const btcBruto = BTC_MO * m;
+  const gross    = btcBruto * btcPrice;
+  const energy   = EN_MO * m;
+  const hosting  = gross * hp;
+  const net      = gross - energy - hosting;
+  const roi      = totalInv>0 ? net/totalInv*100 : 0;
+
+  // KPIs
+  document.getElementById('kBtc').textContent = btcBruto.toFixed(4);
+  document.getElementById('kBtcSub').textContent = BTC_MO.toFixed(5)+' BTC/machine';
+  document.getElementById('kGross').textContent = usd(gross);
+  document.getElementById('kEnergy').textContent = usd(energy);
+  document.getElementById('kEnergySub').textContent = usd(energy/m)+'/machine × '+m;
+  document.getElementById('kHost').textContent = usd(hosting);
+  document.getElementById('kHostSub').textContent = (+document.getElementById('hostSlider').value)+'% of '+usd(gross,0)+' gross';
+  document.getElementById('kNet').textContent = usd(net);
+  document.getElementById('kNet').className = 'kpi-val '+(net>=0?'c-green':'c-red');
+  document.getElementById('kRoi').textContent = pct(roi);
+  document.getElementById('kRoi').className = 'kpi-val '+(roi>=0?'c-green':'c-red');
+
+  // Bar
+  const totalCosts = energy+hosting;
+  const ePct = gross>0?Math.min(100,energy/gross*100):0;
+  const hPct = gross>0?Math.min(100,hosting/gross*100):0;
+  const nPct = gross>0?Math.max(0,net/gross*100):0;
+  document.getElementById('bEnergy').style.width = ePct+'%';
+  document.getElementById('bHosting').style.left = ePct+'%';
+  document.getElementById('bHosting').style.width = hPct+'%';
+  document.getElementById('bNet').style.left = (ePct+hPct)+'%';
+  document.getElementById('bNet').style.width = nPct+'%';
+  document.getElementById('blEnergy').textContent = usd(energy)+' ('+ePct.toFixed(0)+'%)';
+  document.getElementById('blHost').textContent = usd(hosting)+' ('+hPct.toFixed(0)+'%)';
+  document.getElementById('blNet').textContent = usd(net)+' ('+nPct.toFixed(0)+'%)';
+
+  // SCENARIOS
+  const scens = [75000,100000,125000,150000,200000,300000];
+  let sHtml='';
+  scens.forEach(p=>{
+    const g=btcBruto*p, h=g*hp, n=g-energy-h;
+    const roiS=totalInv>0?n/totalInv*100:0;
+    const pb=n>0&&totalInv>0?totalInv/n:null;
+    const isCur=Math.abs(p-btcPrice)<13000;
+    sHtml+=`<tr class="${isCur?'cur-row':''}">
+      <td class="td-gold">${usd(p)}${isCur?'<span class="tag-now">TODAY</span>':''}</td>
+      <td class="td-white">${usd(g)}</td>
+      <td class="td-red">${usd(energy)}</td>
+      <td class="td-red">${usd(h)}</td>
+      <td class="${n>=0?'td-green':'td-red'}">${usd(n)}</td>
+      <td class="${n>=0?'td-green':'td-red'}">${usd(n*12)}</td>
+      <td class="${roiS>=0?'td-green':'td-red'}">${pct(roiS)}</td>
+      <td class="td-muted">${pb?pb.toFixed(1)+' mo':'—'}</td>
+    </tr>`;
+  });
+  document.getElementById('scenBody').innerHTML=sHtml;
+
+  // Scenario insight
+  const netAt100 = btcBruto*100000 - energy - btcBruto*100000*hp;
+  const netAt200 = btcBruto*200000 - energy - btcBruto*200000*hp;
+  document.getElementById('scenInsightText').textContent =
+    `At today's BTC price, your ${m} machine${m===1?'':'s'} generate${m===1?'s':''} ${usd(net)}/month net. `+
+    `If BTC reaches $100K, that becomes ${usd(netAt100)}/month. `+
+    `At $200K, it would be ${usd(netAt200)}/month — ${(netAt200/Math.max(1,net)).toFixed(1)}x your current income. `+
+    `Energy is fixed at ${usd(energy)}/month regardless of BTC price, which means every dollar BTC gains goes directly to your bottom line.`;
+
+  // HODL vs SELL
+  const btcPerMo = btcBruto; // gross BTC per month
+  const totalBtc = btcPerMo * hmo;
+  const sellTotal = Math.max(0,net) * hmo;
+  const hodlVal   = totalBtc * hsp;
+  const extra     = hodlVal - sellTotal;
+
+  document.getElementById('hdBtcAccum').textContent = totalBtc.toFixed(4)+' BTC accumulated over '+hmo+' months';
+  document.getElementById('ssTotalNote').textContent = hmo+' months × '+usd(Math.max(0,net))+'/mo net';
+  document.getElementById('ssTotalUsd').textContent = usd(sellTotal);
+  document.getElementById('ssPerMonth').textContent = usd(Math.max(0,net));
+  document.getElementById('shBtcNote').textContent = btcPerMo.toFixed(5)+' BTC/mo × '+hmo+' months';
+  document.getElementById('shBtc').textContent = btcFmt(totalBtc);
+  document.getElementById('shTargetNote').textContent = btcFmt(totalBtc)+' × '+usd(hsp);
+  document.getElementById('shValue').textContent = usd(hodlVal);
+  document.getElementById('shExtra').textContent = (extra>=0?'+':'')+usd(extra);
+  document.getElementById('shExtra').className = 'sm-val '+(extra>=0?'c-gold':'c-red');
+
+  // Compare table
+  const cmpPrices=[100000,150000,200000,300000,500000,1000000];
+  let cHtml='';
+  cmpPrices.forEach(p=>{
+    const val=totalBtc*p;
+    const diff=val-sellTotal;
+    const roi2=totalInv>0?(val-totalInv)/totalInv*100:0;
+    const mult=sellTotal>0?(val/Math.max(1,sellTotal)).toFixed(2):'—';
+    const isSel=Math.abs(p-hsp)<20000;
+    cHtml+=`<tr class="${isSel?'cur-row':''}">
+      <td class="td-gold">${usd(p)}${isSel?'<span class="tag-now">TARGET</span>':''}</td>
+      <td class="td-muted">${btcFmt(totalBtc)}</td>
+      <td class="${val>=sellTotal?'td-green':'td-red'}">${usd(val)}</td>
+      <td class="${diff>=0?'td-gold':'td-red'}">${diff>=0?'+':''}${usd(diff)}</td>
+      <td class="${roi2>=0?'td-green':'td-red'}">${pct(roi2)}</td>
+      <td class="td-muted">${mult}x</td>
+    </tr>`;
+  });
+  document.getElementById('cmpBody').innerHTML=cHtml;
+  document.getElementById('cmpNote').textContent = btcFmt(totalBtc)+' accumulated over '+hmo+' months';
+
+  // Strategy insight
+  const mult2 = sellTotal>0?(hodlVal/Math.max(1,sellTotal)).toFixed(1):'—';
+  document.getElementById('stratInsight').textContent =
+    `Over ${hmo} months with ${m} machine${m===1?'':'s'}, selling monthly gives you ${usd(sellTotal)} total. `+
+    `Holding and selling at ${usd(hsp)} gives ${usd(hodlVal)} — that's ${usd(extra)} more (${mult2}x). `+
+    `The key tradeoff: selling monthly locks in certainty, while holding bets on BTC appreciation. `+
+    `With mining, you're producing BTC at your cost of production (~${usd(gross>0?energy/btcBruto:0)}/BTC in energy), `+
+    `so every price increase above your cost is pure upside.`;
+
+  // PAYBACK
+  const pbPrices=[{p:btcPrice,label:'Current Price',cur:true},{p:100000,label:'$100K',cur:false},{p:150000,label:'$150K',cur:false},{p:200000,label:'$200K',cur:false},{p:300000,label:'$300K',cur:false}];
+  const maxPb = 60;
+  let pbHtml='';
+  pbPrices.forEach(({p,label,cur})=>{
+    const g=btcBruto*p, h=g*hp, n=g-energy-h;
+    const mo=n>0&&totalInv>0?totalInv/n:null;
+    const fillPct=mo?Math.min(100,(maxPb-Math.min(mo,maxPb))/maxPb*100):0;
+    pbHtml+=`<div class="pb${cur?' pb-current':''}">
+      <div class="pb-label">${label}${cur?' — '+usd(p):''}</div>
+      <div class="pb-months">${mo?mo.toFixed(1):'N/A'}</div>
+      <div class="pb-years">${mo?'months · '+(mo/12).toFixed(1)+' years':'Net is negative'}</div>
+      <div class="pb-bar"><div class="pb-bar-fill" style="width:${fillPct}%"></div></div>
+    </div>`;
+  });
+  document.getElementById('pbGrid').innerHTML=pbHtml;
+
+  const curPb = net>0&&totalInv>0?totalInv/net:null;
+  const pb100 = (()=>{const g=btcBruto*100000,h=g*hp,n=g-energy-h;return n>0&&totalInv>0?totalInv/n:null;})();
+  document.getElementById('pbInsight').textContent = curPb
+    ? `At today's BTC price, you recover your ${usd(totalInv)} investment in ${curPb.toFixed(1)} months (${(curPb/12).toFixed(1)} years). `+
+      (pb100?`If BTC hits $100K, payback drops to ${pb100.toFixed(1)} months. `:'')+'After payback, every month is pure profit.'
+    : `At the current BTC price, costs exceed revenue. Profitability improves as BTC price rises.`;
+}
+
+// ── BTC SLIDER ────────────────────────────────────────────────
+function onBtcSlider(){
+  manualMode=true;
+  const val=+document.getElementById('btcSlider').value;
+  btcPrice=val;
+  document.getElementById('manInput').value=val;
+  document.getElementById('btcSliderVal').textContent=usd(val);
+  document.getElementById('btcDisplay').textContent=usd(val);
+  document.getElementById('btcPill').textContent='MANUAL';
+  document.getElementById('btcPill').className='btc-pill pill-manual';
+  document.getElementById('manSub').textContent='Manual mode · click LIVE to restore feed';
+  document.getElementById('manBtn').classList.add('on');
+  document.getElementById('manBtn').textContent='LIVE';
+  calc();
+}
+function onManual(){
+  manualMode=true;
+  const val=+document.getElementById('manInput').value||77500;
+  btcPrice=val;
+  document.getElementById('btcSlider').value=Math.min(500000,Math.max(50000,val));
+  document.getElementById('btcSliderVal').textContent=usd(val);
+  document.getElementById('btcDisplay').textContent=usd(val);
+  document.getElementById('btcPill').textContent='MANUAL';
+  document.getElementById('btcPill').className='btc-pill pill-manual';
+  document.getElementById('manSub').textContent='Manual mode · click LIVE to restore feed';
+  document.getElementById('manBtn').classList.add('on');
+  document.getElementById('manBtn').textContent='LIVE';
+  calc();
+}
+function toggleLive(){
+  manualMode=false;
+  document.getElementById('manBtn').classList.remove('on');
+  document.getElementById('manBtn').textContent='LIVE';
+  document.getElementById('manSub').textContent='Drag to simulate · auto-updates live';
+  document.getElementById('btcPill').textContent='LIVE';
+  document.getElementById('btcPill').className='btc-pill pill-live';
+  fetchBTC();
+}
+
+// ── LIVE PRICE ────────────────────────────────────────────────
+async function fetchBTC(){
+  if(manualMode)return;
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+    const d=await r.json();
+    btcPrice=d.bitcoin.usd;
+    const chg=d.bitcoin.usd_24h_change;
+    document.getElementById('btcDisplay').textContent=usd(btcPrice);
+    const pill=document.getElementById('btcPill');
+    pill.textContent=(chg>=0?'▲ ':'▼ ')+Math.abs(chg).toFixed(2)+'% 24h';
+    pill.className='btc-pill '+(chg>=0?'pill-up':'pill-dn');
+    document.getElementById('btcUpdated').textContent='Live · Updated '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    if(!manualMode){
+      document.getElementById('btcSlider').value=Math.min(500000,Math.max(50000,btcPrice));
+      document.getElementById('btcSliderVal').textContent=usd(btcPrice);
+      document.getElementById('manInput').value=Math.round(btcPrice);
+    }
+    calc();
+  }catch(e){
+    document.getElementById('btcUpdated').textContent='Connection error — using last known price';
+    calc();
+  }
+}
+
+// ── LOGO ──────────────────────────────────────────────────────
+(function(){
+  const b64='/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQ4BDgDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAEIBwkCBQYEA//EAGEQAQABAwMBBAMEEQ8JBgUFAQABAgMEBQYRBwgSITFBUWETInGRCRcYMjdWV3R1gZKVsbKz0dIUFTM1NkJSYnJzk6GiweEWIzQ4U4KUtMI5Q1RVZNMlJ0RjdhkkWIOjw//EABcBAQEBAQAAAAAAAAAAAAAAAAACAQP/xAAaEQEBAQEBAQEAAAAAAAAAAAAAARESAjEh/9oADAMBAAIRAxEAPwCmQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//Z';
+  document.getElementById('logoImg').src='data:image/png;base64,'+b64;
+})();
+
+// ── INIT ──────────────────────────────────────────────────────
+calc();
+fetchBTC();
+setInterval(fetchBTC,90000);
+</script>
+</body>
+</html>
